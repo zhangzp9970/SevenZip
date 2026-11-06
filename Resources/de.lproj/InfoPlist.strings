@@ -1,0 +1,6 @@
+// SevenZip localization
+"CFBundleDisplayName" = "SevenZip";
+"CFBundleName" = "SevenZip";
+"CFBundleTypeName" = "Komprimiertes Archiv";
+"Compressed archive" = "Komprimiertes Archiv";
+"NSHumanReadableCopyright" = "SevenZip: 7-Zip for macOS\n2026 Zeping Zhang\nbuild with ChatGPT\n7-Zip © 1999–2026 Igor Pavlov";

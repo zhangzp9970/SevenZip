@@ -1,0 +1,4 @@
+module SevenZipBridge {
+    header "SevenZipBridge.h"
+    export *
+}
