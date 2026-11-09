@@ -17,8 +17,6 @@ struct ContentView: View {
             else { fileTable }
             if model.isBusy { progressArea }
             if model.showLog { logArea }
-            Divider()
-            statusBar
         }
         .background(Color(nsColor: .textBackgroundColor))
         .environment(\.locale, localization.locale)
@@ -51,6 +49,10 @@ struct ContentView: View {
                 HStack(spacing: 8) {
                     if item.isDirectory {
                         Image(nsImage: AppArtwork.folderIcon)
+                            .resizable().renderingMode(.original).scaledToFit()
+                            .frame(width: 19, height: 19)
+                    } else if let icon = AppArtwork.archiveIcon(for: item.name) {
+                        Image(nsImage: icon)
                             .resizable().renderingMode(.original).scaledToFit()
                             .frame(width: 19, height: 19)
                     } else {
@@ -146,7 +148,12 @@ struct ContentView: View {
                         ForEach(Array(model.recentURLs.prefix(4)), id: \.path) { url in
                             Button { model.openArchive(url) } label: {
                                 HStack(spacing: 12) {
-                                    Image(systemName: "doc.zipper").foregroundStyle(accent).font(.system(size: 20)).frame(width: 26)
+                                    if let icon = AppArtwork.archiveIcon(for: url.lastPathComponent) {
+                                        Image(nsImage: icon).resizable().renderingMode(.original).scaledToFit()
+                                            .frame(width: 26, height: 30)
+                                    } else {
+                                        Image(systemName: "doc.zipper").foregroundStyle(accent).font(.system(size: 20)).frame(width: 26)
+                                    }
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text(url.lastPathComponent).font(.system(size: 12, weight: .medium))
                                         Text(url.deletingLastPathComponent().path).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
@@ -198,17 +205,5 @@ struct ContentView: View {
                 .font(.system(size: 10, design: .monospaced)).textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading).padding(12)
         }.frame(height: 135).background(Color(nsColor: .controlBackgroundColor))
-    }
-    private var statusBar: some View {
-        HStack(spacing: 10) {
-            Circle().fill(model.isBusy ? accent : Color.secondary.opacity(0.5)).frame(width: 5, height: 5)
-            Text(model.status.text).lineLimit(1).truncationMode(.middle)
-            Spacer()
-            if !model.selection.isEmpty { Text(L10n.format("已选 %d 项", model.selection.count)) }
-            else if !model.isHome { Text(L10n.format("%d 个项目", model.items.count)) }
-            if model.revealURL != nil {
-                Button(model.resultIsBackup ? L10n.tr("显示备份") : L10n.tr("显示结果"), action: model.reveal).buttonStyle(.borderless)
-            }
-        }.font(.system(size: 10)).foregroundStyle(.secondary).padding(.horizontal, 18).frame(height: 33)
     }
 }

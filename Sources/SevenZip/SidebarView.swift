@@ -22,14 +22,16 @@ struct SidebarView: View {
         var displayTitle: String { titleIsLocalized ? title : L10n.tr(title) }
     }
 
-    // Finder's Applications glyph is supplied by macOS, but isn't a public SF Symbol.
-    // Load it at runtime so the system appearance is retained without bundling an asset.
-    private static let applicationsIcon: NSImage? = {
+    // Use Finder's sidebar artwork when it is supplied by this macOS version.
+    // These optional resources aren't bundled; SF Symbols remain the fallback.
+    private static func sidebarIcon(_ name: String) -> NSImage? {
         let image = NSImage(contentsOfFile:
-            "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/SidebarApplicationsFolder.icns")
+            "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/\(name).icns")
         image?.isTemplate = true
         return image
-    }()
+    }
+    private static let applicationsIcon = sidebarIcon("SidebarApplicationsFolder")
+    private static let musicIcon = sidebarIcon("SidebarMusicFolder")
 
     private var favorites: [Location] {
         let manager = FileManager.default
@@ -46,7 +48,7 @@ struct SidebarView: View {
             Location(title: "文稿", symbol: "doc", url: userDirectory(.documentDirectory, fallback: "Documents")),
             Location(title: "下载", symbol: "arrow.down.circle", url: userDirectory(.downloadsDirectory, fallback: "Downloads")),
             Location(title: "图片", symbol: "photo", url: userDirectory(.picturesDirectory, fallback: "Pictures")),
-            Location(title: "音乐", symbol: "music.note", url: userDirectory(.musicDirectory, fallback: "Music")),
+            Location(title: "音乐", symbol: "music.note", url: userDirectory(.musicDirectory, fallback: "Music"), systemIcon: Self.musicIcon),
             Location(title: "影片", symbol: "film", url: userDirectory(.moviesDirectory, fallback: "Movies"))
         ]
     }

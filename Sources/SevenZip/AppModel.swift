@@ -68,12 +68,17 @@ final class AppModel: ObservableObject {
     private var knownPasswords: [URL: String] = [:]
     private var passwordRequest: (archive: URL, action: (String) -> Void)?
     private var cancellation = ArchiveCancellation()
-    private var engine: ArchiveEngine {
-        ArchiveEngine(libraryURL: Bundle.main.privateFrameworksURL!.appendingPathComponent("libSevenZip.dylib"))
-    }
+    private let engine: ArchiveEngine
+    private let preferences: UserDefaults
+    private let documentOpener: ((URL) async throws -> String)?
 
-    init() {
-        recentURLs = (UserDefaults.standard.stringArray(forKey: "recentArchives") ?? [])
+    init(engine: ArchiveEngine? = nil, preferences: UserDefaults = .standard,
+         documentOpener: ((URL) async throws -> String)? = nil) {
+        self.engine = engine ?? ArchiveEngine(libraryURL:
+            Bundle.main.privateFrameworksURL!.appendingPathComponent("libSevenZip.dylib"))
+        self.preferences = preferences
+        self.documentOpener = documentOpener
+        recentURLs = (preferences.stringArray(forKey: "recentArchives") ?? [])
             .map { URL(fileURLWithPath: $0) }.filter { FileManager.default.fileExists(atPath: $0.path) }
     }
 
@@ -292,6 +297,7 @@ final class AppModel: ObservableObject {
     /// Wait for Launch Services to complete its request, rather than treating
     /// the legacy Boolean "request accepted" result as a successful open.
     private func launchDocument(_ url: URL) async throws -> String {
+        if let documentOpener { return try await documentOpener(url) }
         let mode = TemporaryDocument.openingMode(for: url)
         guard mode != .blockedExecutable else {
             throw ArchiveError.invalidInput(L10n.tr("此项目可能是可执行程序，请先手动解压后再打开。"))
@@ -351,6 +357,16 @@ final class AppModel: ObservableObject {
                 guard !cancellation.isCancelled else { throw ArchiveError.cancelled }
                 guard result.warnings.isEmpty else { throw ArchiveError.operationFailed(exitCode: result.exitCode, output: result.output) }
                 try document.validateExtractedFile()
+                if Self.archiveExtensions.contains(document.file.pathExtension.lowercased()) {
+                    // Keep nested archives in this browser. Launch Services can route
+                    // the file back to SevenZip before this extraction job has ended.
+                    temporary = nil // Retain the private copy for navigation and password retries.
+                    if let effectivePassword { knownPasswords[archive] = effectivePassword }
+                    revealURL = document.file
+                    finishJob(result, success: L10n.message("已打开临时副本 · %@", document.file.lastPathComponent))
+                    openArchive(document.file)
+                    return
+                }
                 let application = try await launchDocument(document.file)
                 jobLog += "Opened with \(application): \(document.file.path)\n"
                 temporary = nil // External applications now own the lifetime of this temporary copy.
@@ -545,9 +561,10 @@ final class AppModel: ObservableObject {
         return true
     }
     private func eventHandler() -> @Sendable (ArchiveEvent) -> Void {
-        { [weak self] event in
+        let jobCancellation = cancellation
+        return { [weak self] event in
             Task { @MainActor in
-                guard let self else { return }
+                guard let self, self.cancellation === jobCancellation else { return }
                 switch event {
                 case .log(let text):
                     self.jobLog += text
@@ -572,7 +589,7 @@ final class AppModel: ObservableObject {
     private func remember(_ url: URL) {
         recentURLs.removeAll { $0 == url }; recentURLs.insert(url, at: 0)
         recentURLs = Array(recentURLs.prefix(12))
-        UserDefaults.standard.set(recentURLs.map(\.path), forKey: "recentArchives")
+        preferences.set(recentURLs.map(\.path), forKey: "recentArchives")
     }
     static func archiveStem(_ url: URL) -> String {
         var name = url.deletingPathExtension().lastPathComponent

@@ -110,6 +110,7 @@ final class Application: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     @objc private func toggleSidebar() { chrome?.toggleSidebar() }
     @objc private func addFiles() { model.beginAddingFiles() }
     @objc private func deleteItems() { model.deleteSelectedArchiveItems() }
+    @objc private func revealResult() { model.reveal() }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
@@ -121,6 +122,9 @@ final class Application: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         case #selector(goUp): return model.canGoUp
         case #selector(addFiles): return model.canModifyArchive
         case #selector(deleteItems): return model.canDeleteArchiveItems && !(window?.firstResponder is NSTextView)
+        case #selector(revealResult):
+            menuItem.title = model.resultIsBackup ? L10n.tr("显示备份") : L10n.tr("显示结果")
+            return !model.isBusy && model.revealURL != nil
         case #selector(extract):
             return !model.isBusy && (model.archiveURL != nil || model.selectedFileURLs.contains {
                 AppModel.archiveExtensions.contains($0.pathExtension.lowercased())
@@ -150,6 +154,7 @@ final class Application: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         fileMenu.addItem(.separator())
         add(fileMenu, L10n.tr("添加文件…"), #selector(addFiles), "", symbol: "plus")
         add(fileMenu, L10n.tr("从归档中删除…"), #selector(deleteItems), "\u{8}", symbol: "trash")
+        add(fileMenu, L10n.tr("显示结果"), #selector(revealResult), "", symbol: "arrow.forward.square")
         fileMenu.addItem(.separator())
         fileMenu.addItem(withTitle: L10n.tr("关闭窗口"), action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
         let editItem = main.addItem(withTitle: L10n.tr("编辑"), action: nil, keyEquivalent: "")

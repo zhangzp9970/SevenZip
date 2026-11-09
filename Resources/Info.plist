@@ -17,9 +17,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.2.1</string>
+	<string>0.2.3</string>
 	<key>CFBundleVersion</key>
-	<string>3</string>
+	<string>5</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIconBlue</string>
 	<key>LSMinimumSystemVersion</key>
@@ -39,45 +39,327 @@ build with ChatGPT
 	<array>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string>Compressed archive</string>
+			<string>7Z archive</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>LSHandlerRank</key>
 			<string>Alternate</string>
 			<key>CFBundleTypeIconFile</key>
-			<string>AppIconBlue</string>
+			<string>ArchiveDocument7Z</string>
 			<key>CFBundleTypeExtensions</key>
 			<array>
 				<string>7z</string>
-				<string>zip</string>
-				<string>rar</string>
-				<string>tar</string>
-				<string>gz</string>
-				<string>tgz</string>
-				<string>bz2</string>
-				<string>tbz</string>
-				<string>tbz2</string>
-				<string>xz</string>
-				<string>txz</string>
-				<string>lzma</string>
-				<string>zst</string>
-				<string>cab</string>
-				<string>iso</string>
-				<string>wim</string>
-				<string>arj</string>
-				<string>lzh</string>
 			</array>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>org.7-zip.7-zip-archive</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>ZIP archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentZIP</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>zip</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
 				<string>public.zip-archive</string>
+				<string>com.pkware.zip-archive</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>RAR archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentRAR</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>rar</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
 				<string>com.rarlab.rar-archive</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>TAR archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentTAR</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>tar</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.tar-archive</string>
 				<string>org.gnu.gnu-tar-archive</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>GZ archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentGZ</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>gz</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
 				<string>org.gnu.gnu-zip-archive</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>TGZ archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentTGZ</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>tgz</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>org.gnu.gnu-zip-tar-archive</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>BZ2 archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentBZ2</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>bz2</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
 				<string>public.bzip2-archive</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>TBZ2 archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentTBZ2</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>tbz2</string>
+				<string>tbz</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.tar-bzip2-archive</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>XZ archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentXZ</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>xz</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
 				<string>org.tukaani.xz-archive</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>TXZ archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentTXZ</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>txz</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>org.tukaani.tar-xz-archive</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>LZMA archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentLZMA</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>lzma</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
 				<string>org.tukaani.lzma-archive</string>
-				<string>org.sevenzip.other-archive</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>ZST archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentZST</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>zst</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>CAB archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentCAB</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>cab</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.microsoft.cab</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>ISO archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentISO</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>iso</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.iso-image</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>DMG archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentDMG</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>dmg</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.apple.disk-image-udif</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>WIM archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentWIM</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>wim</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>ARJ archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentARJ</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>arj</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>LZH archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocumentLZH</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>lzh</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>001 archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>ArchiveDocument001</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>001</string>
 			</array>
 		</dict>
 	</array>
@@ -102,6 +384,8 @@ build with ChatGPT
 				<key>public.mime-type</key>
 				<string>application/x-7z-compressed</string>
 			</dict>
+			<key>UTTypeIconFile</key>
+			<string>ArchiveDocument7Z</string>
 		</dict>
 		<dict>
 			<key>UTTypeIdentifier</key>
@@ -122,6 +406,8 @@ build with ChatGPT
 				<key>public.mime-type</key>
 				<string>application/vnd.rar</string>
 			</dict>
+			<key>UTTypeIconFile</key>
+			<string>ArchiveDocumentRAR</string>
 		</dict>
 		<dict>
 			<key>UTTypeIdentifier</key>
@@ -138,11 +424,12 @@ build with ChatGPT
 				<key>public.filename-extension</key>
 				<array>
 					<string>xz</string>
-					<string>txz</string>
 				</array>
 				<key>public.mime-type</key>
 				<string>application/x-xz</string>
 			</dict>
+			<key>UTTypeIconFile</key>
+			<string>ArchiveDocumentXZ</string>
 		</dict>
 		<dict>
 			<key>UTTypeIdentifier</key>
@@ -163,29 +450,8 @@ build with ChatGPT
 				<key>public.mime-type</key>
 				<string>application/x-lzma</string>
 			</dict>
-		</dict>
-		<dict>
-			<key>UTTypeIdentifier</key>
-			<string>org.sevenzip.other-archive</string>
-			<key>UTTypeDescription</key>
-			<string>Archive supported by SevenZip</string>
-			<key>UTTypeConformsTo</key>
-			<array>
-				<string>public.archive</string>
-				<string>public.data</string>
-			</array>
-			<key>UTTypeTagSpecification</key>
-			<dict>
-				<key>public.filename-extension</key>
-				<array>
-					<string>zst</string>
-					<string>cab</string>
-					<string>iso</string>
-					<string>wim</string>
-					<string>arj</string>
-					<string>lzh</string>
-				</array>
-			</dict>
+			<key>UTTypeIconFile</key>
+			<string>ArchiveDocumentLZMA</string>
 		</dict>
 	</array>
 	<key>NSServices</key>

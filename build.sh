@@ -1,11 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 
-APP_ROOT="$(cd "$(dirname "$0")" && pwd)"
+# Resolve project paths relative to this script, even when invoked elsewhere.
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+APP_ROOT="$PWD"
 SEVENZIP_SOURCE_ROOT="$APP_ROOT/vendor/7zip"
 BUILD_ROOT="$APP_ROOT/.build"
 APP_BUNDLE="$APP_ROOT/dist/SevenZip.app"
 ARCH=arm64
+
+printf '构建工程：%s\n输出目录：%s\n' "$APP_ROOT" "$APP_ROOT/dist"
 
 if [[ "$(uname -s)" != Darwin ]]; then
     echo "请在 macOS 13 或更高版本上构建 SevenZip。" >&2
@@ -58,10 +62,14 @@ done
 cp "$APP_ROOT/Resources/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 cp "$SEVENZIP_SOURCE_ROOT/DOC/License.txt" "$SEVENZIP_SOURCE_ROOT/DOC/copying.txt" \
     "$SEVENZIP_SOURCE_ROOT/DOC/unRarLicense.txt" "$APP_BUNDLE/Contents/Resources/Licenses/"
+cp "$APP_ROOT/LICENSE" "$APP_BUNDLE/Contents/Resources/Licenses/SevenZip-GPL-3.0.txt"
 chmod 755 "$APP_BUNDLE/Contents/MacOS/SevenZip" "$APP_BUNDLE/Contents/Frameworks/libSevenZip.dylib"
 swift -module-cache-path "$BUILD_ROOT/module-cache" \
     "$APP_ROOT/Resources/GenerateIcon.swift" "$BUILD_ROOT/AppIcon.iconset" \
     "$APP_BUNDLE/Contents/Resources/$ICON_NAME.icns"
+swift -module-cache-path "$BUILD_ROOT/module-cache" \
+    "$APP_ROOT/Resources/GenerateDocumentIcons.swift" "$APP_ROOT/Resources/Info.plist" \
+    "$APP_BUNDLE/Contents/Resources" "$BUILD_ROOT/DocumentIconPreviews"
 # An earlier build used a stable icon filename, which macOS can keep cached.
 # Keep the previous generated resource outside the bundle after the rename.
 if [[ "$ICON_NAME" != AppIcon && -f "$APP_BUNDLE/Contents/Resources/AppIcon.icns" ]]; then

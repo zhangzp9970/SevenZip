@@ -21,4 +21,23 @@ enum AppArtwork {
         image.isTemplate = false
         return image
     }()
+
+    /// Reuse the document artwork advertised to Finder, including its format label.
+    private static let archiveIcons: [String: NSImage] = {
+        var icons: [String: NSImage] = [:]
+        let types = Bundle.main.object(forInfoDictionaryKey: "CFBundleDocumentTypes") as? [[String: Any]] ?? []
+        for type in types {
+            guard let name = type["CFBundleTypeIconFile"] as? String,
+                  let extensions = type["CFBundleTypeExtensions"] as? [String],
+                  let url = Bundle.main.url(forResource: (name as NSString).deletingPathExtension, withExtension: "icns"),
+                  let image = NSImage(contentsOf: url) else { continue }
+            image.isTemplate = false
+            for ext in extensions { icons[ext.lowercased()] = image }
+        }
+        return icons
+    }()
+
+    static func archiveIcon(for filename: String) -> NSImage? {
+        archiveIcons[(filename as NSString).pathExtension.lowercased()]
+    }
 }

@@ -13,6 +13,7 @@
 #include <cerrno>
 #include <cctype>
 #include <cstring>
+#include <cstdio>
 #include <fcntl.h>
 #include <mutex>
 #include <map>
@@ -149,6 +150,7 @@ class OpenCallback final: public IArchiveOpenCallback,public ICryptoGetTextPassw
   Z7_IFACES_IMP_UNK_3(IArchiveOpenCallback,ICryptoGetTextPassword,IArchiveOpenVolumeCallback)
 public:
   Context *ctx; const char *password; bool requested=false, volumeOpened=false; std::string archivePath;
+  int metadataFD=-1; std::string memberName;
   OpenCallback(Context *c,const char *p,const char *path):ctx(c),password(p),archivePath(path) {}
 };
 Z7_COM7F_IMF(OpenCallback::SetTotal(const UInt64 *,const UInt64 *)) { return ctx->check(); }
@@ -161,9 +163,9 @@ Z7_COM7F_IMF(OpenCallback::CryptoGetTextPassword(BSTR *p)) {
 Z7_COM7F_IMF(OpenCallback::GetProperty(PROPID key,PROPVARIANT *value)) {
   CPropVariant p;
   struct stat st{};
-  if(stat(archivePath.c_str(),&st)!=0)return E_FAIL;
+  if((metadataFD>=0?fstat(metadataFD,&st):stat(archivePath.c_str(),&st))!=0)return E_FAIL;
   switch(key){
-    case kpidName:{auto pos=archivePath.find_last_of('/');p=unicode(archivePath.substr(pos==std::string::npos?0:pos+1).c_str());break;}
+    case kpidName:{auto pos=archivePath.find_last_of('/');p=unicode((memberName.empty()?archivePath.substr(pos==std::string::npos?0:pos+1):memberName).c_str());break;}
     case kpidSize:p=(UInt64)st.st_size;break;
     case kpidIsDir:p=false;break;
     case kpidMTime:{FILETIME ft;FiTime_To_FILETIME(st.st_mtimespec,ft);p=ft;break;}
@@ -173,6 +175,7 @@ Z7_COM7F_IMF(OpenCallback::GetProperty(PROPID key,PROPVARIANT *value)) {
 Z7_COM7F_IMF(OpenCallback::GetStream(const wchar_t *volume,IInStream **stream)) {
   *stream=nullptr;
   if(ctx->check()!=S_OK)return E_ABORT;
+  if(metadataFD>=0)return S_FALSE; // A decoded TAR has no adjacent volumes.
   const std::string name=utf8(UString(volume));
   // Archive-provided volume names are adjacent leaf names, never arbitrary paths.
   if(!safePath(name) || name.find('/')!=std::string::npos || name.find('\\')!=std::string::npos)return S_FALSE;
@@ -191,6 +194,105 @@ struct Opened {
   bool headerEncrypted=false, volumeOpened=false;
   ~Opened(){ if(archive) archive->Close(); }
 };
+// Compressed TAR is one logical archive. Decode only explicitly named TAR
+// wrappers, so plain .gz files and archives stored inside ZIP/7z stay unchanged.
+static bool compressedTarName(std::string name) {
+  std::transform(name.begin(),name.end(),name.begin(),[](unsigned char c){return (char)tolower(c);});
+  for(const char *suffix:{".tar.gz",".tgz",".tar.bz2",".tbz",".tbz2",".tar.xz",".txz",
+                          ".tar.lzma",".tar.zst",".tar.zstd",".tzst"}) {
+    const size_t length=strlen(suffix);
+    if(name.size()>=length && name.compare(name.size()-length,length,suffix)==0)return true;
+  }
+  return false;
+}
+static std::string formatName(UInt32 index) {
+  CPropVariant p; GetHandlerProperty2(index,NArchive::NHandlerPropID::kName,&p);
+  std::string name=p.vt==VT_BSTR?utf8(UString(p.bstrVal)):"";
+  std::transform(name.begin(),name.end(),name.begin(),[](unsigned char c){return (char)tolower(c);});
+  return name;
+}
+static void reportHeaderWarnings(IInArchive *archive,Context &ctx) {
+  for(auto key:{kpidErrorFlags,kpidWarningFlags}) {
+    CPropVariant flags;
+    if(archive->GetArchiveProperty(key,&flags)==S_OK && flags.vt==VT_UI4 && flags.ulVal)
+      ctx.message(1,"The archive reports header warnings (flags "+std::to_string(flags.ulVal)+").");
+  }
+}
+class TarEnvelopeCallback final: public IArchiveExtractCallback,public CMyUnknownImp {
+  Z7_IFACES_IMP_UNK_1(IArchiveExtractCallback)
+  Z7_IFACE_COM7_IMP(IProgress)
+public:
+  Context *ctx; CMyComPtr<ISequentialOutStream> output; bool completed=false;
+  TarEnvelopeCallback(Context *c,ISequentialOutStream *stream):ctx(c),output(stream) {}
+};
+Z7_COM7F_IMF(TarEnvelopeCallback::SetTotal(UInt64 size)) {ctx->total=size;return ctx->progress(0);}
+Z7_COM7F_IMF(TarEnvelopeCallback::SetCompleted(const UInt64 *size)) {return ctx->progress(size?*size:0);}
+Z7_COM7F_IMF(TarEnvelopeCallback::GetStream(UInt32 index,ISequentialOutStream **stream,Int32 mode)) {
+  *stream=nullptr;
+  if(ctx->check()!=S_OK)return E_ABORT;
+  if(index!=0 || mode!=NArchive::NExtract::NAskMode::kExtract)return E_INVALIDARG;
+  *stream=output;(*stream)->AddRef();return S_OK;
+}
+Z7_COM7F_IMF(TarEnvelopeCallback::PrepareOperation(Int32)) {return ctx->check();}
+Z7_COM7F_IMF(TarEnvelopeCallback::SetOperationResult(Int32 result)) {
+  completed=result==NArchive::NExtract::NOperationResult::kOK;
+  if(!completed)ctx->message(2,"Cannot decode compressed TAR (code "+std::to_string(result)+"). The data or checksum is damaged.");
+  return ctx->check();
+}
+static HRESULT openCompressedTar(const char *path,const char *password,UInt32 format,Context &ctx,Opened &opened) {
+  if(!compressedTarName(path))return S_OK;
+  const std::string kind=formatName(format);
+  if(kind!="gzip" && kind!="bzip2" && kind!="xz" && kind!="lzma" && kind!="zstd" && kind!="zstd2")return S_OK;
+  UInt32 count=0;HRESULT hr=opened.archive->GetNumberOfItems(&count);
+  if(hr!=S_OK)return hr;
+  if(count!=1 || boolean(opened.archive,0,kpidIsDir))throw Failure("Compressed TAR must contain one data stream.");
+
+  // tmpfile is private and unlinked; the duplicated descriptor outlives FILE.
+  // All paths supplied by compression headers are ignored, and every exit
+  // closes the descriptors through COM ownership (including cancellation).
+  FILE *temporary=std::tmpfile();
+  if(!temporary)return ioError(&ctx,"Cannot create temporary TAR storage");
+  int fd=fcntl(fileno(temporary),F_DUPFD_CLOEXEC,0);
+  const int savedError=errno;fclose(temporary);errno=savedError;
+  if(fd<0)return ioError(&ctx,"Cannot access temporary TAR storage");
+  CMyComPtr<IInStream> input=new Input(fd,&ctx);
+  int writeFD=fcntl(fd,F_DUPFD_CLOEXEC,0);
+  if(writeFD<0)return ioError(&ctx,"Cannot write temporary TAR storage");
+  CMyComPtr<ISequentialOutStream> output=new Output(writeFD,&ctx);
+  auto *decoder=new TarEnvelopeCallback(&ctx,output);
+  CMyComPtr<IArchiveExtractCallback> decoderHolder=decoder;
+  hr=opened.archive->Extract(nullptr,(UInt32)-1,0,decoder);
+  if(hr!=S_OK)return hr;
+  if(ctx.check()!=S_OK)return E_ABORT;
+  if(!decoder->completed || ctx.error)return E_FAIL;
+  decoder->output.Release();output.Release();
+  hr=input->Seek(0,STREAM_SEEK_SET,nullptr);if(hr!=S_OK)return hr;
+
+  UInt32 formats=0;GetNumberOfFormats(&formats);
+  for(UInt32 index=0;index<formats;index++) {
+    if(formatName(index)!="tar")continue;
+    CPropVariant classProp;GetHandlerProperty2(index,NArchive::NHandlerPropID::kClassID,&classProp);
+    if(classProp.vt!=VT_BSTR || SysStringByteLen(classProp.bstrVal)!=sizeof(GUID))return E_FAIL;
+    GUID cls;memcpy(&cls,classProp.bstrVal,sizeof(cls));
+    CMyComPtr<IInArchive> tar;
+    hr=CreateObject(&cls,&IID_IInArchive,(void**)&tar);if(hr!=S_OK)return hr;
+    auto *callback=new OpenCallback(&ctx,password,path);
+    callback->metadataFD=fd;callback->memberName="Content.tar"; // Recognizes empty TARs too.
+    CMyComPtr<IArchiveOpenCallback> holder=callback;
+    UInt64 maxCheck=1<<23;
+    hr=tar->Open(input,&maxCheck,callback);
+    if(hr!=S_OK) {
+      tar->Close();
+      if(hr!=E_ABORT)ctx.message(2,"The compressed stream is not a valid TAR archive.");
+      return hr;
+    }
+    opened.archive->Close();
+    opened.archive=tar;opened.input=input;opened.classID=cls;opened.fallback="Content";
+    reportHeaderWarnings(tar,ctx);
+    return S_OK;
+  }
+  throw Failure("The TAR decoder is unavailable.");
+}
 static HRESULT openArchive(const char *path,const char *password,Context &ctx,Opened &opened) {
   if(!path || !*path) throw Failure("Archive path is empty.");
   int fd=open(path,O_RDONLY|O_CLOEXEC);
@@ -228,12 +330,8 @@ static HRESULT openArchive(const char *path,const char *password,Context &ctx,Op
     if(hr==S_OK){
       opened.archive=arc;
       opened.classID=cls;opened.headerEncrypted=callback->requested;opened.volumeOpened=callback->volumeOpened;
-      for(auto key:{kpidErrorFlags,kpidWarningFlags}) {
-        CPropVariant flags;
-        if(arc->GetArchiveProperty(key,&flags)==S_OK && flags.vt==VT_UI4 && flags.ulVal)
-          ctx.message(1,"The archive reports header warnings (flags "+std::to_string(flags.ulVal)+").");
-      }
-      return S_OK;
+      reportHeaderWarnings(arc,ctx);
+      return openCompressedTar(path,password,index,ctx,opened);
     }
     arc->Close();
     if(callback->requested) break;

@@ -123,3 +123,6 @@ fastlane/test_output
 iOSInjectionProject/
 
 .DS_Store
+
+# SevenZip generated bundles
+/dist/

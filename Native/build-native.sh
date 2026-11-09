@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-native_dir="$(cd "$(dirname "$0")" && pwd)"
+native_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 package_dir="$(cd "$native_dir/.." && pwd)"
 source_root="$package_dir/vendor/7zip"
 build_dir="$package_dir/.build/native"
